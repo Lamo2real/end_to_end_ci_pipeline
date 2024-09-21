@@ -1,0 +1,4 @@
+1: make a click() for this id = 'fc-button-label' (accepting cookies)
+2: make a click() for the "got it!" pop up id = 'cc_btn cc_btn_accept_all'
+3: make a click() for language selection like this id = 'langSelect-EN'
+4: click the bigcookie with id = 'bigCookie'
