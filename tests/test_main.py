@@ -1,87 +1,100 @@
+
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import time
 
-def setup_browser():
-    """
-    Sets up the Chrome WebDriver and returns the driver object.
-    """
-    service = Service(executable_path="chromedriver.exe")
-    driver = webdriver.Chrome(service=service)
+
+
+def setup_driver():
+    """Set up the Chrome WebDriver and return the driver object."""
+    
+    the_service = Service(executable_path="chromedriver.exe")
+    driver = webdriver.Chrome(service=the_service)
     return driver
 
 
+
+
+def open_website(driver, url):
+    """Open the website using the driver and wait for it to load."""
+    
+    return driver.get(url)
+
+
+
+
 def accept_cookies(driver):
-    """
-    Accepts cookies on the Google homepage.
-    """
-    try:
-        accept_cookies_button = WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.ID, "L2AGLb"))
-        )
-        accept_cookies_button.click()
-    except Exception as e:
-        print(f"Cookies acceptance failed: {e}")
-
-
-
-def search_google(driver, query):
-    """
-    Performs a search on Google for the specified query.
+    """Accept cookies by clicking the button with class 'fc-button-label'."""
     
-    Args:
-        driver: The WebDriver object used to interact with the browser.
-        query (str): The search term to be entered into Google.
-    """
-    search_box = WebDriverWait(driver, 10).until(
-        EC.presence_of_element_located((By.CLASS_NAME, "gLFyf"))
+    WebDriverWait(driver, 5).until(
+        EC.presence_of_element_located((By.CLASS_NAME, "fc-button-label"))
     )
-    search_box.clear()
-    search_box.send_keys(query + Keys.ENTER)
+    cookie_button = driver.find_element(By.CLASS_NAME, "fc-button-label")
+    cookie_button.click()
 
 
-def click_first_link(driver, link_text):
-    """
-    Clicks on the first link that partially matches the provided link text.
+
+
+def select_language(driver):
+    """Select English language for the game."""
     
-    Args:
-        driver: The WebDriver object used to interact with the browser.
-        link_text (str): The partial text of the link to click.
-    """
-    try:
-        link = WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.PARTIAL_LINK_TEXT, link_text))
-        )
-        link.click()
-    except Exception as e:
-        print(f"Could not click on the link: {e}")
+    language_button_id = "langSelect-EN"
+    WebDriverWait(driver, 5).until(
+        EC.presence_of_element_located((By.ID, language_button_id))
+    )
+    language_button = driver.find_element(By.ID, language_button_id)
+    language_button.click()
+    
+    
+    
 
+def click_cookie_and_buy_products(driver):
+    """Continuously click the cookie and buy available products"""
+    
+    cookie_id = "cookies"
+    big_cookie_id = "bigCookie"
+    product_price_prefix = "productPrice"
+    product_prefix = "product"
 
-def test_run_test():
-    """
-    Orchestrates the end-to-end test: opens the browser, accepts cookies,
-    performs a search, and clicks a link.
-    """
-    driver = None
-    try:
-        driver = setup_browser()
-        driver.get("https://google.com")
-        
-        accept_cookies(driver)
-        search_google(driver, "coffee")
-        click_first_link(driver, "coffee")
-        
-    except Exception as e:
-        print(f"Test failed: {e}")
-    finally:
-        if driver:
-            time.sleep(3)
-            driver.quit()
+    # Wait for cookie and game elements to load
+    WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.ID, big_cookie_id)))
+    click_cookie = driver.find_element(By.ID, big_cookie_id)
 
+    WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.ID, cookie_id)))
+    cookie_count_elem = driver.find_element(By.ID, cookie_id)
+
+    while True:
+        # Click the big cookie
+        click_cookie.click()
+
+        # Get current cookie count
+        cookie_count = int(cookie_count_elem.text.split(" ")[0].replace(",", ""))
+        print(cookie_count)
+
+        # Check if we can buy products
+        for i in range(10):  # i am not gonna let it run over 3 let alone 10 hahaha
+            product_price_text = driver.find_element(By.ID, product_price_prefix + str(i)).text.replace(",", "")
+            if not product_price_text.isdigit():
+                continue
+
+            product_price = int(product_price_text)
+            if cookie_count >= product_price:
+                product = driver.find_element(By.ID, product_prefix + str(i))
+                product.click() 
+                break
+
+def main():
+    """
+    Main function to execute the script.
+    """
+    driver = setup_driver()
+    open_website(driver, "https://orteil.dashnet.org/cookieclicker/")
+    accept_cookies(driver)
+    select_language(driver)
+    click_cookie_and_buy_products(driver)
 
 if __name__ == "__main__":
-    test_run_test()
+    main()
